@@ -1,0 +1,412 @@
+//////////////////////PROCEDURES/////////////////////
+
+
+/////////////////////CRIAR/////////////////////////
+
+DROP PROCEDURE IF EXISTS cadastrar_usuario;
+DELIMITER $$
+CREATE PROCEDURE cadastrar_usuario (
+    IN
+    u_tipo INT,
+    u_email VARCHAR(200),
+    u_senha VARCHAR(200),
+    OUT id_usuario INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'INSERT INTO usuario (email, senha, fk_tipo) VALUES (?, ?, ?)';
+    	EXECUTE stmt1 USING u_email, u_senha, u_tipo;
+	SET id_usuario = LAST_INSERT_ID();
+END $$
+DELIMITER ;
+
+
+///////////////////////////////////////////////
+
+DROP PROCEDURE IF EXISTS cadastrar_paciente;
+DELIMITER $$
+CREATE PROCEDURE cadastrar_paciente (
+    IN
+    nome_paciente VARCHAR(200),
+    email VARCHAR(200),
+    senha VARCHAR(200),
+    rg VARCHAR(20),
+    cpf VARCHAR(20),
+    telefone VARCHAR(120),
+    data_nascimento DATE
+)
+BEGIN    
+	CALL cadastrar_usuario(1, email, md5(senha), @usuario);
+	PREPARE stmt1 FROM 
+    		'INSERT INTO paciente(nome_paciente, rg, cpf, telefone, data_nascimento, fk_usuario) VALUES (?, ?, ?, ?, ?, ?)';
+    EXECUTE stmt1 USING nome_paciente, rg, cpf, telefone, data_nascimento, @usuario;
+END $$
+DELIMITER ;
+
+
+////////////////////////////////////////////////////////////
+
+
+
+DROP PROCEDURE IF EXISTS cadastrar_atendente;
+DELIMITER $$
+CREATE PROCEDURE cadastrar_atendente (
+    IN
+    nome_atendente VARCHAR(200),
+    email VARCHAR(200),
+    senha VARCHAR(200)
+)
+BEGIN    
+	CALL cadastrar_usuario(1, email, md5(senha), @usuario);
+	PREPARE stmt1 FROM 
+    		'INSERT INTO atendente(nome_atendente, fk_usuario) VALUES (?, ?)';
+    EXECUTE stmt1 USING nome_atendente,  @usuario;
+END $$
+DELIMITER ;
+
+////////////////////////////////////////////////////////////
+
+
+
+DROP PROCEDURE IF EXISTS cadastrar_medico;
+DELIMITER $$
+CREATE PROCEDURE cadastrar_medico (
+    IN
+    nome_medico VARCHAR(200),
+    fk_especialidade INT,
+    email VARCHAR(200),
+    senha VARCHAR(200)
+)
+BEGIN    
+	CALL cadastrar_usuario(1, email, md5(senha), @usuario);
+	PREPARE stmt1 FROM 
+    		'INSERT INTO medico(nome_medico, fk_especialidade, fk_usuario) VALUES (?, ?, ?)';
+    EXECUTE stmt1 USING nome_medico, fk_especialidade, @usuario;
+END $$
+DELIMITER ;
+
+
+
+//////////////////////////////
+
+
+DROP PROCEDURE IF EXISTS cadastrar_consulta;
+DELIMITER $$
+CREATE PROCEDURE cadastrar_consulta (
+    IN
+    fk_medico INT,
+    fk_paciente INT,
+    fk_status INT,
+    data DATE,
+    descricao TEXT,
+    valor FLOAT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'INSERT INTO consulta(fk_medico, fk_paciente, fk_status, data, descricao, valor) VALUES (?, ?, ?, ?, ?, ?)';
+    EXECUTE stmt1 USING fk_medico, fk_paciente, fk_status, data, descricao, valor;
+END $$
+DELIMITER ;
+
+
+
+//////////////////////ALTERAR//////////////////////////////
+
+DROP PROCEDURE IF EXISTS alterar_usuario;
+DELIMITER $$
+CREATE PROCEDURE alterar_usuario (
+    IN
+    u_email VARCHAR(200),
+    u_senha VARCHAR(200),
+    id_usuario INT
+)
+BEGIN    
+IF u_senha != '' THEN
+   PREPARE stmt1 FROM 'UPDATE usuario SET email = ?, senha = 		? WHERE id_usuario = ?';
+	EXECUTE stmt1 USING u_email, md5(u_senha), id_usuario;
+ELSE
+   PREPARE stmt1 FROM 'UPDATE usuario SET email = ? WHERE id_usuario = ?';
+	EXECUTE stmt1 USING u_email, id_usuario;
+END IF;
+END $$
+DELIMITER ;
+
+
+////////////////////////////////////////////////////////
+
+DROP PROCEDURE IF EXISTS alterar_paciente;
+DELIMITER $$
+CREATE PROCEDURE alterar_paciente (
+    IN
+    nome_paciente VARCHAR(200),  
+    rg VARCHAR(20),
+    cpf VARCHAR(20),
+    telefone VARCHAR(120),
+    data_nascimento DATE,
+    id_paciente INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'UPDATE paciente SET nome_paciente=?, rg=?, cpf=?, telefone=?, data_nascimento=? WHERE id_paciente = ?';
+    EXECUTE stmt1 USING nome_paciente, rg, cpf, telefone, data_nascimento, id_paciente;
+END $$
+DELIMITER ;
+
+
+////////////////////////////////////////////////////////
+
+DROP PROCEDURE IF EXISTS alterar_atendente;
+DELIMITER $$
+CREATE PROCEDURE alterar_atendente (
+    IN
+    nome_atendente VARCHAR(200),
+    id_atendente INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'UPDATE atendente SET nome_atendente=? WHERE id_atendente=?';
+    EXECUTE stmt1 USING nome_atendente, id_atendente;
+END $$
+DELIMITER ;
+
+////////////////////////////////////////////////////////
+
+
+DROP PROCEDURE IF EXISTS alterar_medico;
+DELIMITER $$
+CREATE PROCEDURE alterar_medico (
+    IN
+    nome_medico VARCHAR(200),
+    fk_especialidade INT,
+    id_medico INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'UPDATE medico SET nome_medico=?, fk_especialidade=? WHERE id_medico=?';
+    EXECUTE stmt1 USING nome_medico, fk_especialidade, id_medico;
+END $$
+DELIMITER ;
+
+
+////////////////////////////////////////////////////////
+
+DROP PROCEDURE IF EXISTS alterar_consulta;
+DELIMITER $$
+CREATE PROCEDURE alterar_consulta (
+    IN
+    fk_medico INT,
+    fk_paciente INT,
+    fk_status INT,
+    data DATE,
+    descricao TEXT,
+    valor FLOAT,
+    id_consulta INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'UPDATE consulta SET fk_medico=?, fk_paciente=?, fk_status=?, data=?, descricao=?, valor=? WHERE id_consulta=?';
+    EXECUTE stmt1 USING fk_medico, fk_paciente, fk_status, data, descricao, valor, id_consulta;
+END $$
+DELIMITER ;
+
+
+
+
+
+
+/////////////////////////APAGAR/////////////////////////
+
+DROP PROCEDURE IF EXISTS apagar_usuario;
+DELIMITER $$
+CREATE PROCEDURE apagar_usuario (
+    IN id_usuario INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'DELETE FROM usuario WHERE id_usuario = ?';
+    	EXECUTE stmt1 USING id_usuario;
+END $$
+DELIMITER ;
+
+
+/////////////////////////////////////////
+
+DROP PROCEDURE IF EXISTS apagar_consulta;
+DELIMITER $$
+CREATE PROCEDURE apagar_consulta (
+    IN id_consulta INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'DELETE FROM consulta WHERE id_consulta = ? AND fk_status != 3';
+    	EXECUTE stmt1 USING id_consulta;
+END $$
+DELIMITER ;
+
+
+
+
+//////////////////////////FUNCTION/////////////////////////////////
+DROP FUNCTION IF EXISTS lucro_consultas;
+DELIMITER $$
+CREATE FUNCTION lucro_consultas(data1 DATE, data2 DATE)
+RETURNS VARCHAR(255) DETERMINISTIC
+BEGIN
+
+RETURN (
+    SELECT SUM(valor) AS total 
+    FROM consulta
+    WHERE fk_status = 3 AND 
+    data BETWEEN data1 AND data2
+);
+
+END $$
+DELIMITER ;
+
+
+
+///////////////////////////////VIEWS///////////////////////////
+CREATE OR REPLACE VIEW listar_consultas AS
+SELECT c.*, p.nome_paciente, m.nome_medico, s.status
+FROM consulta AS c 
+JOIN paciente AS p ON p.id_paciente = c.fk_paciente
+JOIN medico AS M ON m.id_medico = c.fk_medico
+JOIN status AS s ON s.id_status = c.fk_status;
+
+
+
+
+DROP PROCEDURE IF EXISTS login;
+DELIMITER $$
+CREATE PROCEDURE login (
+    IN
+    u_email VARCHAR(200),
+    u_senha VARCHAR(200)
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'SELECT id_usuario, fk_tipo FROM usuario WHERE email = ? AND senha = ? LIMIT 1';
+    	EXECUTE stmt1 USING u_email, md5(u_senha);
+END $$
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS get_medico;
+DELIMITER $$
+CREATE PROCEDURE get_medico (
+    IN id int
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'SELECT * FROM medico AS m 
+            JOIN usuario AS u ON u.id_usuario=m.fk_usuario 
+            JOIN especialidade AS e ON e.id_especialidade=m.fk_especialidade
+            JOIN tipo_usuario AS t ON t.id_tipo = u.fk_tipo
+            WHERE m.fk_usuario = ?';
+    	EXECUTE stmt1 USING id;
+END $$
+DELIMITER ;
+
+
+
+
+DROP PROCEDURE IF EXISTS listar_consultas_medico;
+DELIMITER $$
+CREATE PROCEDURE listar_consultas_medico (
+    IN id_medico INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'SELECT c.*, p.nome_paciente, m.nome_medico, s.status
+            FROM consulta AS c 
+            JOIN paciente AS p ON p.id_paciente = c.fk_paciente
+            JOIN medico AS M ON m.id_medico = c.fk_medico
+            JOIN status AS s ON s.id_status = c.fk_status 
+            WHERE m.id_medico = ?
+            ORDER BY c.data DESC';
+    	EXECUTE stmt1 USING id_medico;
+END $$
+DELIMITER ;
+
+
+CREATE OR REPLACE VIEW listar_especialidades AS
+SELECT * FROM especialidade;
+
+
+
+
+
+DROP PROCEDURE IF EXISTS get_atendente;
+DELIMITER $$
+CREATE PROCEDURE get_atendente (
+    IN id int
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'SELECT * FROM atendente AS a 
+            JOIN usuario AS u ON u.id_usuario=a.fk_usuario 
+            JOIN tipo_usuario AS t ON t.id_tipo = u.fk_tipo
+            WHERE a.fk_usuario = ?';
+    	EXECUTE stmt1 USING id;
+END $$
+DELIMITER ;
+
+
+
+CREATE OR REPLACE VIEW listar_consultas AS
+SELECT c.*, p.nome_paciente, m.nome_medico, s.status
+            FROM consulta AS c 
+            JOIN paciente AS p ON p.id_paciente = c.fk_paciente
+            JOIN medico AS M ON m.id_medico = c.fk_medico
+            JOIN status AS s ON s.id_status = c.fk_status 
+            ORDER BY c.data DESC
+
+
+
+CREATE OR REPLACE VIEW listar_pacientes AS SELECT * FROM paciente AS p
+JOIN usuario AS u ON u.id_usuario = p.fk_usuario
+ORDER BY nome_paciente	
+
+
+CREATE OR REPLACE VIEW listar_medicos AS SELECT * FROM medico AS m
+JOIN usuario AS u ON u.id_usuario = m.fk_usuario
+JOIN especialidade AS e ON e.id_especialidade = m.fk_especialidade
+ORDER BY nome_medico
+
+
+
+DROP PROCEDURE IF EXISTS get_paciente;
+DELIMITER $$
+CREATE PROCEDURE get_paciente (
+    IN id int
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'SELECT * FROM paciente AS p 
+            JOIN usuario AS u ON u.id_usuario=p.fk_usuario 
+            JOIN tipo_usuario AS t ON t.id_tipo = u.fk_tipo
+            WHERE p.fk_usuario = ?';
+    	EXECUTE stmt1 USING id;
+END $$
+DELIMITER ;
+
+
+
+
+DROP PROCEDURE IF EXISTS listar_consultas_paciente;
+DELIMITER $$
+CREATE PROCEDURE listar_consultas_paciente (
+    IN id_paciente INT
+)
+BEGIN    
+	PREPARE stmt1 FROM 
+    		'SELECT c.*, p.nome_paciente, m.nome_medico, s.status
+            FROM consulta AS c 
+            JOIN paciente AS p ON p.id_paciente = c.fk_paciente
+            JOIN medico AS M ON m.id_medico = c.fk_medico
+            JOIN status AS s ON s.id_status = c.fk_status 
+            WHERE p.id_paciente = ?
+            ORDER BY c.data DESC';
+    	EXECUTE stmt1 USING id_paciente;
+END $$
+DELIMITER ;
